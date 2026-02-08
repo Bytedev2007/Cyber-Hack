@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Hack System</title>
+
+<style>
+body{
+    background:black;
+    color:#00ff00;
+    font-family:monospace;
+    margin:0;
+    text-align:center;
+    overflow:hidden;
+}
+
+/* LOGIN */
+#loginScreen{
+    padding-top:120px;
+}
+
+/* TERMINAL */
+#terminal{
+    display:none;
+    text-align:left;
+    padding:20px;
+    height:100vh;
+    overflow:auto;
+}
+
+/* GAME */
+#game{
+    display:none;
+    padding-top:40px;
+}
+
+/* DENIED */
+#denied{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:red;
+    color:white;
+    font-size:60px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    animation:blink .2s alternate infinite;
+}
+
+@keyframes blink{
+    from{opacity:1}
+    to{opacity:0}
+}
+
+input,button{
+    background:black;
+    color:#00ff00;
+    border:1px solid #00ff00;
+    padding:8px;
+    font-family:monospace;
+    margin:5px;
+}
+
+h1{
+    animation:glitch 1s infinite alternate;
+}
+
+@keyframes glitch{
+    0%{text-shadow:2px 0 red}
+    100%{text-shadow:-2px 0 cyan}
+}
+
+/* barra tempo */
+#barBox{
+    width:300px;
+    height:10px;
+    border:1px solid #00ff00;
+    margin:10px auto;
+}
+
+#bar{
+    height:100%;
+    width:100%;
+    background:#00ff00;
+}
+
+#ranking{
+    margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="denied">ACCESS DENIED</div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+    <h1>🔓 SYSTEM ACCESS</h1>
+    <input id="nick" placeholder="Digite seu nome">
+    <button onclick="startHack()">ENTRAR</button>
+</div>
+
+<!-- TERMINAL -->
+<div id="terminal"></div>
+
+<!-- GAME -->
+<div id="game">
+
+    <h1>🟢 HACK THE SYSTEM 🟢</h1>
+
+    <p id="fase"></p>
+
+    <input type="number" id="guess" placeholder="código">
+    <button onclick="check()">ENVIAR</button>
+
+    <p id="msg"></p>
+    <p id="status"></p>
+
+    <div id="barBox">
+        <div id="bar"></div>
+    </div>
+
+    <div id="ranking"></div>
+</div>
+
+<!-- sons -->
+<audio id="win" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+<audio id="lose" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+
+<!-- música hacker -->
+<audio id="music" loop src="https://actions.google.com/sounds/v1/ambiences/computer_room.ogg"></audio>
+
+<script>
+let player="";
+let fase=1;
+let maxNumber=10;
+let vidas=3;
+let tempo=15;
+let timer;
+let secret;
+
+const input=document.getElementById("guess");
+const msg=document.getElementById("msg");
+const bar=document.getElementById("bar");
+const denied=document.getElementById("denied");
+
+/* ENTER envia */
+input.addEventListener("keydown",e=>{
+    if(e.key==="Enter") check();
+});
+
+function play(id){
+    const s=document.getElementById(id);
+    s.currentTime=0;
+    s.play();
+}
+
+/* ===== LOGIN ===== */
+
+function startHack(){
+    player=document.getElementById("nick").value || "anon";
+
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("terminal").style.display="block";
+
+    document.getElementById("music").play();
+
+    fakeTerminal();
+}
+
+/* ===== TERMINAL ===== */
+
+function fakeTerminal(){
+    const lines=[
+        "Conectando...",
+        "Bypassando firewall...",
+        "Injetando exploit...",
+        "Root access granted",
+        "Bem-vindo "+player
+    ];
+
+    let i=0;
+    const term=document.getElementById("terminal");
+
+    const interval=setInterval(()=>{
+        term.innerHTML+=lines[i]+"<br>";
+        i++;
+
+        if(i>=lines.length){
+            clearInterval(interval);
+            setTimeout(()=>{
+                term.style.display="none";
+                document.getElementById("game").style.display="block";
+                startLevel();
+            },800);
+        }
+    },500);
+}
+
+/* ===== GAME ===== */
+
+function startLevel(){
+    secret=Math.floor(Math.random()*maxNumber)+1;
+
+    document.getElementById("fase").textContent=
+        "Fase "+fase+" | 1-"+maxNumber;
+
+    input.value="";
+    input.focus();
+
+    startTimer();
+    updateStatus();
+}
+
+function startTimer(){
+    clearInterval(timer);
+    tempo=15;
+
+    timer=setInterval(()=>{
+        tempo--;
+
+        bar.style.width=(tempo/15)*100+"%";
+
+        updateStatus();
+
+        if(tempo<=0){
+            vidas--;
+            deniedFlash();
+            play("lose");
+            reset();
+        }
+    },1000);
+}
+
+function deniedFlash(){
+    denied.style.display="flex";
+    setTimeout(()=> denied.style.display="none",400);
+}
+
+function updateStatus(){
+    document.getElementById("status").textContent=
+        "❤️ "+vidas+" | ⏱ "+tempo+"s";
+}
+
+function check(){
+    const g=Number(input.value);
+    if(!g) return;
+
+    if(g<secret){
+        msg.textContent="↑ maior";
+        play("lose");
+    }
+    else if(g>secret){
+        msg.textContent="↓ menor";
+        play("lose");
+    }
+    else{
+        play("win");
+        msg.textContent="ACESSO LIBERADO";
+        fase++;
+        maxNumber+=10;
+        startLevel();
+    }
+
+    input.value="";
+}
+
+function reset(){
+    if(vidas<=0){
+        gameOver();
+    }else{
+        startLevel();
+    }
+}
+
+/* ===== RANKING + MEDALHAS ===== */
+
+function gameOver(){
+    saveScore();
+    alert("GAME OVER - Fase "+fase);
+    fase=1; maxNumber=10; vidas=3;
+    startLevel();
+}
+
+function saveScore(){
+    let scores=JSON.parse(localStorage.getItem("ranking")||"[]");
+
+    scores.push({nome:player,pontos:fase});
+    scores.sort((a,b)=>b.pontos-a.pontos);
+    scores=scores.slice(0,5);
+
+    localStorage.setItem("ranking",JSON.stringify(scores));
+    showRanking();
+}
+
+function showRanking(){
+    let scores=JSON.parse(localStorage.getItem("ranking")||"[]");
+
+    let medals=["🥇","🥈","🥉","🏅","🏅"];
+
+    let html="<h3>🏆 RANKING</h3>";
+
+    scores.forEach((s,i)=>{
+        html+=medals[i]+" "+s.nome+" - Fase "+s.pontos+"<br>";
+    });
+
+    document.getElementById("ranking").innerHTML=html;
+}
+
+showRanking();
+</script>
+
+</body>
+</html>
